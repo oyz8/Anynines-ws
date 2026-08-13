@@ -24,7 +24,7 @@
 
 ### 第一步：使用模板新建仓库
 
-1. 点击本仓库右上角的 **Use this template** → **Create a new repository**  
+1. 点击本仓库右上角的 **Fork**  
 
 ### 第二步：配置 GitHub Secrets
 
