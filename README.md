@@ -3,6 +3,10 @@
 # ⭐ **觉得有用？给个 Star 支持一下！**
 一键将 **代理服务 (VLESS/Trojan/Shadowsocks) + 哪吒监控 Agent** 部署到 [anynines](https://paas.anynines.com/) 云平台，自动生成订阅链接并打印节点信息。
 
+> 💡 **注意**  
+> - 官网注册系统有bug不能设密码: [重置密码](https://customerpanel.de.a9sapp.eu/users/request_password_reset_instructions)
+
+
 ## 📁 仓库结构
 
 ```
