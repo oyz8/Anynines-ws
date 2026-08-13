@@ -1,0 +1,141 @@
+name: 执行部署
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: 执行部署
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      PRINT_NODE_INFO: ${{ secrets.PRINT_NODE_INFO || 'true' }}
+
+    steps:
+      - name: 拉取仓库
+        uses: actions/checkout@v4
+
+      - name: 安装Cloud Foundry CLI
+        run: |
+          wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+          echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+          sudo apt-get update
+          sudo apt-get install cf8-cli
+
+      - name: 执行部署
+        env:
+            CF_API: "https://api.de.a9s.eu"
+            CF_CREDENTIALS: ${{ secrets.CF_CREDENTIALS }}
+        run: |
+          # 解析邮箱和密码（格式：邮箱-----密码）
+          CF_USER="${CF_CREDENTIALS%%-----*}"
+          CF_PASS="${CF_CREDENTIALS#*-----}"
+
+          cf api "$CF_API"
+          cf auth "$CF_USER" "$CF_PASS"
+
+          # 定位组织和空间
+          ORG=$(cf orgs | awk 'NR>3 {print $1; exit}')
+          cf target -o "$ORG"
+          SPACE=$(cf spaces | awk 'NR>3 {print $1; exit}')
+          if [ -z "$SPACE" ]; then
+            cf create-space dev
+            SPACE="dev"
+          fi
+          cf target -o "$ORG" -s "$SPACE"
+
+          # 直接推送（不删除旧应用，保留域名）
+          cf push --strategy rolling
+
+          APP_NAME="app"
+          ROUTE=$(cf app "$APP_NAME" | awk '/^routes:/{print $2}')
+          if [ -z "$ROUTE" ]; then
+            echo "Failed to get route"
+            exit 1
+          fi
+          if [[ ! "$ROUTE" =~ ^https?:// ]]; then
+            ROUTE="https://$ROUTE"
+          fi
+          echo "Detected route: $ROUTE"
+
+          # 设置环境变量 DOMAIN（去掉协议和路径）
+          DOMAIN_VALUE=$(echo "$ROUTE" | sed -e 's|https://||' -e 's|http://||' -e 's|/.*||')
+          cf set-env "$APP_NAME" DOMAIN "$DOMAIN_VALUE"
+          echo "DOMAIN set to: $DOMAIN_VALUE"
+
+          # 从 GitHub Secrets 获取配置并设置默认值
+          UUID_VAL="${{ secrets.UUID }}"
+          SERVER_VAL="${{ secrets.SERVER }}"
+          CLIENT_SECRET_VAL="${{ secrets.CLIENT_SECRET }}"
+          SUB_PATH_VAL="${{ secrets.SUB_PATH }}"
+          NAME_VAL="${{ secrets.NAME }}"
+          AUTO_ACCESS_VAL="${{ secrets.AUTO_ACCESS }}"
+          DEBUG_VAL="${{ secrets.DEBUG }}"
+
+          # 设置默认值（仅当 Secret 为空时使用）
+          [ -z "$UUID_VAL" ] && UUID_VAL="c202b33e-03d9-406c-9bba-1ca228036028"
+          [ -z "$SUB_PATH_VAL" ] && SUB_PATH_VAL="sub"
+          [ -z "$NAME_VAL" ] && NAME_VAL=""
+          [ -z "$AUTO_ACCESS_VAL" ] && AUTO_ACCESS_VAL="false"
+          [ -z "$DEBUG_VAL" ] && DEBUG_VAL="false"
+          # SERVER 和 CLIENT_SECRET 允许为空，不设置默认值（空字符串即可）
+
+          # 设置环境变量
+          cf set-env "$APP_NAME" UUID "$UUID_VAL"
+          cf set-env "$APP_NAME" SERVER "$SERVER_VAL"
+          cf set-env "$APP_NAME" CLIENT_SECRET "$CLIENT_SECRET_VAL"
+          cf set-env "$APP_NAME" SUB_PATH "$SUB_PATH_VAL"
+          cf set-env "$APP_NAME" NAME "$NAME_VAL"
+          cf set-env "$APP_NAME" AUTO_ACCESS "$AUTO_ACCESS_VAL"
+          cf set-env "$APP_NAME" DEBUG "$DEBUG_VAL"
+
+          # 重启应用使环境变量生效
+          cf restart "$APP_NAME"
+
+          # 导出域名和 SUB_PATH 供后续步骤使用
+          echo "DOMAIN_VALUE=$DOMAIN_VALUE" >> $GITHUB_ENV
+          echo "SUB_PATH=$SUB_PATH_VAL" >> $GITHUB_ENV
+          echo "Detected SUB_PATH: $SUB_PATH_VAL"
+
+      - name: 打印节点信息
+        run: |
+          if [[ "$PRINT_NODE_INFO" != "false" ]]; then
+            SUB_URL="https://${DOMAIN_VALUE}/${SUB_PATH}"
+            echo "📡 订阅链接: $SUB_URL"
+            echo "⏳ 等待应用启动（最多 30 秒）..."
+
+            for i in {1..10}; do
+              STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$SUB_URL")
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ 服务已就绪"
+                break
+              fi
+              sleep 3
+            done
+
+            echo ""
+            echo "==================== 节点配置（base64） ===================="
+            curl -s "$SUB_URL"
+            echo ""
+            echo "=========================================================="
+          else
+            echo "ℹ️ 敏感信息已隐藏（PRINT_NODE_INFO=false），不显示订阅链接和节点配置。"
+          fi
+
+#      - name: 查看应用日志（调试用）
+#        if: always()
+#        run: |
+#          echo "========== 应用最近日志 =========="
+#          cf logs app --recent
+
+      - name: 清理历史运行记录
+        if: always()
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          delete_workflow_pattern: ${{ github.workflow }}
+          retain_days: 0
+          keep_minimum_runs: 1
