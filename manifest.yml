@@ -1,0 +1,8 @@
+---
+applications:
+- name: app      # 改成你想要的应用名
+  command: python app.py
+  buildpacks:
+    - python_buildpack
+  random-route: true
+  health-check-type: port

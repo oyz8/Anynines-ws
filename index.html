@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotCraft Blog — Discord Bot Development Guide</title>
+    <meta name="description" content="The ultimate technical blog for Discord bot development, covering tutorials, guides, code examples and best practices.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+/* ===== RESET & VARIABLES ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0c10;--bg2:#111418;--bg3:#181c22;--surface:#1e232b;--border:#2a303a;--text:#e8edf5;--text2:#9aa4b8;--accent:#5865f2;--accent2:#4752c4;--green:#57f287;--yellow:#fee75c;--red:#ed4245;--orange:#f57c00;--purple:#9b59b6;--font:'Segoe UI',system-ui,-apple-system,sans-serif;--font-mono:'Cascadia Code','Fira Code','Consolas',monospace}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+ul{list-style:none}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* ===== NAVBAR ===== */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(10,12,16,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);transition:all .3s}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.15rem;color:var(--text)}
+.logo-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:100%;height:100%;fill:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-links li a{padding:8px 16px;border-radius:8px;font-size:.9rem;color:var(--text2);transition:all .3s;position:relative}
+.nav-links li a:hover{color:var(--text);background:rgba(88,101,242,0.1)}
+.nav-links li a::after{content:'';position:absolute;bottom:2px;left:16px;right:16px;height:2px;background:var(--accent);transform:scaleX(0);transition:transform .3s}
+.nav-links li a:hover::after{transform:scaleX(1)}
+.nav-cta{background:var(--accent)!important;color:#fff!important;border-radius:8px;padding:8px 20px!important;margin-left:8px}
+.nav-cta:hover{background:var(--accent2)!important;transform:translateY(-1px)}
+.nav-cta::after{display:none!important}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.nav-hamburger span{width:26px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+
+/* ===== HERO ===== */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 24px 80px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(88,101,242,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 60%,rgba(87,242,135,0.06) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(254,231,92,0.04) 0%,transparent 40%);z-index:0}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:800px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(88,101,242,0.15);color:var(--accent);padding:8px 18px;border-radius:100px;font-size:.85rem;font-weight:600;margin-bottom:28px;border:1px solid rgba(88,101,242,0.25)}
+.hero h1{font-size:clamp(2.5rem,6vw,4.2rem);font-weight:800;line-height:1.15;margin-bottom:20px;letter-spacing:-.02em}
+.hero h1 .h4a-gradient-text{background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:1.1rem;color:var(--text2);max-width:640px;margin:0 auto 32px;line-height:1.8}
+.hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:60px}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;padding:14px 32px;border-radius:10px;font-weight:600;font-size:.95rem;transition:all .3s}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 6px 30px rgba(88,101,242,0.35)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);padding:14px 32px;border-radius:10px;font-weight:600;font-size:.95rem;border:1px solid var(--border);transition:all .3s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+.hero-stats{display:flex;gap:40px;justify-content:center;flex-wrap:wrap}
+.stat-item{display:flex;flex-direction:column;align-items:center}
+.stat-number{font-size:2rem;font-weight:800;color:var(--text)}
+.stat-label{font-size:.82rem;color:var(--text2)}
+
+/* ===== SECTIONS ===== */
+section{padding:80px 0}
+#featured{padding:100px 0 80px}
+.section-header{text-align:center;max-width:640px;margin:0 auto 48px}
+.section-tag{display:inline-block;background:rgba(88,101,242,0.12);color:var(--accent);padding:5px 14px;border-radius:100px;font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px}
+.section-header h2{font-size:2rem;font-weight:700;margin-bottom:12px;letter-spacing:-.01em}
+.section-header p{color:var(--text2);font-size:1rem}
+
+/* ===== FEATURED ===== */
+.featured-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
+.featured-main{background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--border);transition:all .3s}
+.featured-main:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.3)}
+.featured-main .post-img{width:100%;height:220px;object-fit:cover}
+.post-body{padding:24px}
+.post-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px}
+.tag-guide{background:rgba(88,101,242,0.15);color:var(--accent)}
+.tag-tutorial{background:rgba(87,242,135,0.15);color:var(--green)}
+.tag-advanced{background:rgba(245,124,0,0.15);color:var(--orange)}
+.tag-tips{background:rgba(254,231,92,0.15);color:var(--yellow)}
+.tag-news{background:rgba(155,89,182,0.15);color:var(--purple)}
+.post-body h3{font-size:1.1rem;font-weight:700;margin-bottom:10px;line-height:1.5}
+.post-body p{color:var(--text2);font-size:.9rem;line-height:1.7;margin-bottom:16px}
+.post-meta{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text2)}
+.author{display:flex;align-items:center;gap:8px}
+.author-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;flex-shrink:0}
+.dot{width:3px;height:3px;border-radius:50%;background:var(--text2);opacity:.5}
+.featured-side{display:flex;flex-direction:column;gap:24px}
+.side-post{display:flex;background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--border);transition:all .3s}
+.side-post:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.25)}
+.side-post img{width:140px;min-height:140px;object-fit:cover;flex-shrink:0}
+.side-post .post-body{padding:16px 20px}
+.side-post .post-body h3{font-size:.95rem}
+
+/* ===== CODE SHOWCASE ===== */
+#code-showcase{background:var(--bg2)}
+.code-showcase-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:48px;align-items:center}
+.code-text h2{font-size:2rem;font-weight:700;margin-bottom:16px}
+.code-text h2 .h4a-gradient-text{background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.code-text>p{color:var(--text2);margin-bottom:24px}
+.code-features{display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+.code-features li{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--text2)}
+.code-features li i{color:var(--green);font-size:.9rem}
+.code-window{background:#0d1117;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.code-window-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#161b22;border-bottom:1px solid var(--border)}
+.window-dots{display:flex;gap:6px}
+.window-dots span{width:10px;height:10px;border-radius:50%}
+.dot-red{background:#ff5f56}
+.dot-yellow{background:#ffbd2e}
+.dot-green{background:#27c93f}
+.window-title{font-size:.78rem;color:var(--text2);font-family:var(--font-mono)}
+.code-block{padding:20px;font-family:var(--font-mono);font-size:.8rem;line-height:1.8;color:#c9d1d9;overflow-x:auto;white-space:nowrap}
+.code-block .cm{color:#8b949e;font-style:italic}
+.code-block .kw{color:#ff7b72}
+.code-block .fn{color:#d2a8ff}
+.code-block .var{color:#79c0ff}
+.code-block .op{color:#ff7b72}
+.code-block .str{color:#a5d6ff}
+
+/* ===== ARTICLES ===== */
+.articles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.article-card{background:var(--surface);border-radius:14px;overflow:hidden;border:1px solid var(--border);transition:all .3s}
+.article-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,0.3)}
+.article-card img{width:100%;height:180px;object-fit:cover}
+.article-card .card-body{padding:20px}
+.article-card .card-body h3{font-size:1rem;font-weight:700;margin-bottom:8px;line-height:1.5}
+.article-card .card-body p{font-size:.85rem;color:var(--text2);line-height:1.7;margin-bottom:12px}
+.read-more{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:.85rem;font-weight:600;transition:all .3s}
+.read-more:hover{gap:10px}
+.filter-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:36px}
+.filter-btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .3s}
+.filter-btn:hover{border-color:var(--accent);color:var(--text)}
+.filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ===== TUTORIALS ===== */
+#tutorials{background:var(--bg2)}
+.tutorials-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.tutorial-card{display:flex;gap:20px;background:var(--surface);padding:24px;border-radius:14px;border:1px solid var(--border);transition:all .3s}
+.tutorial-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.2)}
+.tutorial-icon{width:52px;height:52px;border-radius:12px;background:rgba(88,101,242,0.12);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--accent);flex-shrink:0}
+.tutorial-info h3{font-size:1rem;font-weight:700;margin-bottom:8px}
+.tutorial-info p{font-size:.85rem;color:var(--text2);line-height:1.7;margin-bottom:14px}
+.tutorial-footer{display:flex;gap:16px;font-size:.78rem;color:var(--text2);align-items:center;flex-wrap:wrap}
+.difficulty{padding:2px 10px;border-radius:6px;font-weight:600;font-size:.72rem}
+.diff-easy{background:rgba(87,242,135,0.15);color:var(--green)}
+.diff-medium{background:rgba(254,231,92,0.15);color:var(--yellow)}
+.diff-hard{background:rgba(237,66,69,0.15);color:var(--red)}
+
+/* ===== TIPS ===== */
+.tips-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.tip-card{background:var(--surface);padding:24px;border-radius:14px;border:1px solid var(--border);transition:all .3s}
+.tip-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.tip-number{font-size:.7rem;font-weight:700;color:var(--accent);letter-spacing:.08em;margin-bottom:10px}
+.tip-card h3{font-size:.95rem;font-weight:700;margin-bottom:10px;line-height:1.5}
+.tip-card p{font-size:.83rem;color:var(--text2);line-height:1.7}
+
+/* ===== TAGS ===== */
+#tags-section{background:var(--bg2)}
+.tags-container{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.tag-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;background:var(--surface);border:1px solid var(--border);font-size:.85rem;color:var(--text2);cursor:default;transition:all .3s}
+.tag-pill:hover{border-color:var(--accent);color:var(--text);background:rgba(88,101,242,0.08)}
+.tag-pill i{color:var(--accent)}
+.tag-count{background:rgba(88,101,242,0.12);color:var(--accent);padding:1px 8px;border-radius:100px;font-size:.72rem;font-weight:600}
+
+/* ===== NEWSLETTER ===== */
+#newsletter{padding:100px 0;background:var(--bg2);position:relative;overflow:hidden}
+#newsletter::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(88,101,242,0.08) 0%,transparent 70%)}
+.newsletter-content{text-align:center;max-width:520px;margin:0 auto;position:relative;z-index:1}
+.newsletter-content h2{font-size:1.8rem;font-weight:700;margin-bottom:12px}
+.newsletter-content h2 .h4a-gradient-text{background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.newsletter-content p{color:var(--text2);margin-bottom:28px}
+.newsletter-form{display:flex;gap:12px;max-width:440px;margin:0 auto}
+.newsletter-form input{flex:1;padding:14px 18px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.9rem;outline:none;transition:border-color .3s}
+.newsletter-form input:focus{border-color:var(--accent)}
+.newsletter-form input::placeholder{color:var(--text2)}
+.newsletter-form button{padding:14px 24px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:.9rem;cursor:pointer;transition:all .3s;white-space:nowrap}
+.newsletter-form button:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* ===== FOOTER ===== */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:60px 32px 30px}
+.footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{color:var(--text2);font-size:.85rem;margin-bottom:20px;line-height:1.7}
+.social-links{display:flex;gap:10px}
+.social-link{width:38px;height:38px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .3s}
+.social-link:hover{border-color:var(--accent);color:var(--accent);background:rgba(88,101,242,0.1);transform:translateY(-2px)}
+.footer-col h4{font-size:.9rem;font-weight:700;margin-bottom:16px}
+.footer-col ul li{margin-bottom:10px}
+.footer-col ul li a{color:var(--text2);font-size:.85rem;transition:color .3s}
+.footer-col ul li a:hover{color:var(--accent)}
+.footer-bottom{max-width:1200px;margin:0 auto;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:.8rem;color:var(--text2)}
+.footer-bottom a{color:var(--accent)}
+
+/* ===== ANIMATIONS ===== */
+.h4a-reveal,.h4a-reveal-left,.h4a-reveal-right{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
+.h4a-reveal-left{transform:translateX(-30px)}
+.h4a-reveal-right{transform:translateX(30px)}
+.h4a-reveal.visible,.h4a-reveal-left.visible,.h4a-reveal-right.visible{opacity:1;transform:translate(0,0)}
+.h4a-blur-in{opacity:0;filter:blur(10px);transform:translateY(20px);transition:all .8s ease}
+.h4a-blur-in.visible{opacity:1;filter:blur(0);transform:translateY(0)}
+.h4a-stagger>*{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.h4a-stagger>*.visible{opacity:1;transform:translateY(0)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1024px){
+.featured-grid{grid-template-columns:1fr}
+.featured-side{display:grid;grid-template-columns:1fr 1fr}
+.code-showcase-grid{grid-template-columns:1fr}
+.articles-grid{grid-template-columns:repeat(2,1fr)}
+.tips-grid{grid-template-columns:repeat(2,1fr)}
+.footer-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+.navbar{padding:12px 20px}
+.nav-links{position:fixed;top:0;right:-100%;width:280px;height:100vh;background:var(--bg);flex-direction:column;padding:80px 24px 24px;border-left:1px solid var(--border);transition:right .3s;gap:4px}
+.nav-links.active{right:0}
+.nav-links li a{display:block;padding:12px 16px;border-radius:10px}
+.nav-cta{margin-left:0;margin-top:8px;text-align:center}
+.nav-hamburger{display:flex}
+.nav-hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.nav-hamburger.active span:nth-child(2){opacity:0}
+.nav-hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.hero h1{font-size:2rem}
+.hero-stats{gap:24px}
+.stat-number{font-size:1.5rem}
+.featured-side{grid-template-columns:1fr}
+.side-post{flex-direction:column}
+.side-post img{width:100%;height:160px}
+.articles-grid{grid-template-columns:1fr}
+.tutorials-grid{grid-template-columns:1fr}
+.tips-grid{grid-template-columns:1fr}
+.newsletter-form{flex-direction:column}
+.footer-grid{grid-template-columns:1fr;gap:28px}
+.footer-bottom{flex-direction:column;gap:6px;text-align:center}
+}
+    </style>
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+    <a href="#" class="nav-logo">
+        <div class="logo-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.082.114 18.1.133 18.11a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+        </div>
+        BotCraft Blog
+    </a>
+    <ul class="nav-links" id="navLinks">
+        <li><a href="#featured" class="h4a-underline-draw">Featured</a></li>
+        <li><a href="#articles" class="h4a-underline-draw">Articles</a></li>
+        <li><a href="#tutorials" class="h4a-underline-draw">Tutorials</a></li>
+        <li><a href="#tips" class="h4a-underline-draw">Tips</a></li>
+        <li><a href="#newsletter" class="nav-cta h4a-magnetic">Subscribe</a></li>
+    </ul>
+    <div class="nav-hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero h4a-kinetic-grid" data-spacing="38" data-dot-color="rgba(88,101,242,0.5)" data-line-color="rgba(88,101,242,0.15)">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <div class="hero-badge h4a-reveal">
+            <i class="fab fa-discord"></i>
+            Discord Bot Development Blog
+        </div>
+        <h1 class="h4a-blur-in">
+            Build Powerful<br><span class="h4a-gradient-text">Discord Bots</span>
+        </h1>
+        <p class="h4a-reveal">Learn Discord bot development from scratch — covering discord.js, discord.py, slash commands, permission systems, database integration and complete knowledge guides.</p>
+        <div class="hero-btns h4a-reveal">
+            <a href="#articles" class="btn-primary h4a-magnetic h4a-glow">
+                <i class="fas fa-book-open"></i>
+                Start Reading
+            </a>
+            <a href="#tutorials" class="btn-secondary">
+                <i class="fas fa-code"></i>
+                View Tutorials
+            </a>
+        </div>
+        <div class="hero-stats h4a-stagger">
+            <div class="stat-item">
+                <span class="stat-number h4a-counter">48</span>
+                <span class="stat-label">Technical Articles</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number h4a-counter">12</span>
+                <span class="stat-label">Full Tutorials</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number h4a-counter">3200</span>
+                <span class="stat-label">Subscribers</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number h4a-counter">98</span>
+                <span class="stat-label">Code Examples</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FEATURED ===== -->
+<section id="featured">
+    <div class="container">
+        <div class="section-header h4a-reveal">
+            <div class="section-tag">Featured</div>
+            <h2>This Week's Top Articles</h2>
+            <p>Hand-picked quality content to help you master Discord bot development core skills fast</p>
+        </div>
+        <div class="featured-grid">
+            <div class="featured-main h4a-reveal-left h4a-shine">
+                <img class="post-img" src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop" alt="Discord Bot Development">
+                <div class="post-body">
+                    <span class="post-tag tag-guide">Full Guide</span>
+                    <h3>The Complete 2024 Discord Bot Development Guide: From App Registration to Live Deployment</h3>
+                    <p>This article walks you through the entire Discord bot development workflow — creating an app in the Developer Portal, configuring permissions, writing your first slash command, and deploying to a server.</p>
+                    <div class="post-meta">
+                        <div class="author">
+                            <div class="author-avatar">CK</div>
+                            <span>Chen Kai</span>
+                        </div>
+                        <div class="dot"></div>
+                        <span>Dec 15, 2024</span>
+                        <div class="dot"></div>
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>12 min read</span>
+                    </div>
+                </div>
+            </div>
+            <div class="featured-side h4a-reveal-right">
+                <div class="side-post h4a-shine">
+                    <img src="https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&auto=format&fit=crop" alt="JavaScript code">
+                    <div class="post-body">
+                        <span class="post-tag tag-tutorial">Tutorial</span>
+                        <h3>Complete Slash Commands Tutorial with discord.js v14</h3>
+                        <p>Learn how to register, handle and respond to slash commands, including subcommands and option configuration.</p>
+                        <div class="post-meta">
+                            <div class="author">
+                                <div class="author-avatar">LW</div>
+                                <span>Li Wei</span>
+                            </div>
+                            <div class="dot"></div>
+                            <span>8 min</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="side-post h4a-shine">
+                    <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&auto=format&fit=crop" alt="Python code">
+                    <div class="post-body">
+                        <span class="post-tag tag-tips">Tips</span>
+                        <h3>discord.py Async Event Handling: Deep Dive into on_message & on_member_join</h3>
+                        <p>Master the most-used event listeners in Python bots and async best practices.</p>
+                        <div class="post-meta">
+                            <div class="author">
+                                <div class="author-avatar">ZY</div>
+                                <span>Zhang Yu</span>
+                            </div>
+                            <div class="dot"></div>
+                            <span>6 min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CODE SHOWCASE ===== -->
+<section id="code-showcase">
+    <div class="container">
+        <div class="code-showcase-grid">
+            <div class="code-text h4a-reveal-left">
+                <div class="section-tag">Code Examples</div>
+                <h2>Clean Code,<span class="h4a-gradient-text"> Powerful Features</span></h2>
+                <p>Whether you use JavaScript or Python, we provide complete, runnable code samples with every article — all linked to GitHub repositories.</p>
+                <ul class="code-features">
+                    <li><i class="fas fa-check-circle"></i> Latest discord.js v14 / discord.py 4.x versions</li>
+                    <li><i class="fas fa-check-circle"></i> All code is tested and works out of the box</li>
+                    <li><i class="fas fa-check-circle"></i> Detailed comments explaining every key line</li>
+                    <li><i class="fas fa-check-circle"></i> Includes error handling and edge cases</li>
+                    <li><i class="fas fa-check-circle"></i> Companion GitHub repos and demo servers</li>
+                </ul>
+                <a href="#articles" class="btn-primary h4a-magnetic h4a-glow">
+                    <i class="fas fa-code"></i>
+                    Browse All Examples
+                </a>
+            </div>
+            <div class="code-window h4a-reveal-right">
+                <div class="code-window-header">
+                    <div class="window-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                    </div>
+                    <span class="window-title">bot.js — discord.js v14</span>
+                </div>
+                <div class="code-block">
+<span class="cm">// 引入 discord.js 核心模块</span><br>
+<span class="kw">const</span> { <span class="fn">Client</span>, <span class="fn">GatewayIntentBits</span>, <span class="fn">SlashCommandBuilder</span> } <span class="op">=</span> <span class="fn">require</span>(<span class="str">'discord.js'</span>);<br>
+<br>
+<span class="kw">const</span> <span class="var">client</span> <span class="op">=</span> <span class="kw">new</span> <span class="fn">Client</span>({<br>
+&nbsp;&nbsp;<span class="var">intents</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">GatewayIntentBits</span>.<span class="var">Guilds</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">GatewayIntentBits</span>.<span class="var">GuildMessages</span>,<br>
+&nbsp;&nbsp;]<br>
+});<br>
+<br>
+<span class="cm">// 机器人就绪事件</span><br>
+<span class="var">client</span>.<span class="fn">once</span>(<span class="str">'ready'</span>, () <span class="op">=></span> {<br>
+&nbsp;&nbsp;<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`✅ 已登录: <span class="var">${client.user.tag}</span>`</span>);<br>
+});<br>
+<br>
+<span class="cm">// 处理斜杠指令</span><br>
+<span class="var">client</span>.<span class="fn">on</span>(<span class="str">'interactionCreate'</span>, <span class="kw">async</span> (<span class="var">interaction</span>) <span class="op">=></span> {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (!<span class="var">interaction</span>.<span class="var">isChatInputCommand</span>()) <span class="kw">return</span>;<br>
+&nbsp;&nbsp;<span class="kw">if</span> (<span class="var">interaction</span>.<span class="var">commandName</span> <span class="op">===</span> <span class="str">'ping'</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">await</span> <span class="var">interaction</span>.<span class="fn">reply</span>(<span class="str">'🏓 Pong!'</span>);<br>
+&nbsp;&nbsp;}<br>
+});<br>
+<br>
+<span class="var">client</span>.<span class="fn">login</span>(<span class="var">process</span>.<span class="var">env</span>.<span class="var">TOKEN</span>);
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== ARTICLES ===== -->
+<section id="articles">
+    <div class="container">
+        <div class="section-header h4a-reveal">
+            <div class="section-tag">All Articles</div>
+            <h2>Explore All Content</h2>
+            <p>From beginner basics to advanced architecture — covering every aspect of Discord bot development</p>
+        </div>
+        <div class="filter-bar h4a-reveal">
+            <button class="filter-btn active" onclick="filterPosts(this, 'all')">All</button>
+            <button class="filter-btn" onclick="filterPosts(this, 'guide')">Guides</button>
+            <button class="filter-btn" onclick="filterPosts(this, 'tutorial')">Tutorials</button>
+            <button class="filter-btn" onclick="filterPosts(this, 'tips')">Tips</button>
+            <button class="filter-btn" onclick="filterPosts(this, 'advanced')">Advanced</button>
+            <button class="filter-btn" onclick="filterPosts(this, 'news')">News</button>
+        </div>
+        <div class="articles-grid h4a-stagger" id="articlesGrid">
+
+            <div class="article-card h4a-shine h4a-lift" data-category="tutorial">
+                <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop" alt="Node.js">
+                <div class="card-body">
+                    <span class="post-tag tag-tutorial">Tutorial</span>
+                    <h3>Node.js + discord.js Setup: Zero to Your First Command</h3>
+                    <p>Step-by-step guide to installing Node.js, initializing a project, and running your first Discord bot in under five minutes.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>5 min</span>
+                        <div class="dot"></div>
+                        <span>Dec 10, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="guide">
+                <img src="https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=600&auto=format&fit=crop" alt="Permissions">
+                <div class="card-body">
+                    <span class="post-tag tag-guide">Guide</span>
+                    <h3>Discord Permission System Deep Dive: Bitfields, Roles & Channel Overrides</h3>
+                    <p>Understand Discord's complex permission hierarchy and learn to dynamically check and manage user permissions in your bot.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>10 min</span>
+                        <div class="dot"></div>
+                        <span>Dec 8, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="advanced">
+                <img src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600&auto=format&fit=crop" alt="Database">
+                <div class="card-body">
+                    <span class="post-tag tag-advanced">Advanced</span>
+                    <h3>Integrating MongoDB with Your Discord Bot: Users, Points & Config</h3>
+                    <p>Use Mongoose to connect MongoDB to your bot and implement persistent user scores, server configurations and more.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>14 min</span>
+                        <div class="dot"></div>
+                        <span>Dec 5, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="tips">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop" alt="Embeds">
+                <div class="card-body">
+                    <span class="post-tag tag-tips">Tips</span>
+                    <h3>Crafting Beautiful Discord Embeds: Colors, Fields & Thumbnails</h3>
+                    <p>Master EmbedBuilder to create visually stunning rich-text messages that make your bot replies look truly professional.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>7 min</span>
+                        <div class="dot"></div>
+                        <span>Dec 2, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="advanced">
+                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop" alt="Music Bot">
+                <div class="card-body">
+                    <span class="post-tag tag-advanced">Advanced</span>
+                    <h3>Build a Discord Music Bot from Scratch: @discordjs/voice + ytdl-core</h3>
+                    <p>Full implementation of joining voice channels, streaming YouTube audio, queue management, pause and skip functionality.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>20 min</span>
+                        <div class="dot"></div>
+                        <span>Nov 28, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="news">
+                <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&auto=format&fit=crop" alt="Deploy">
+                <div class="card-body">
+                    <span class="post-tag tag-news">News</span>
+                    <h3>Best Discord Bot Hosting Platforms 2024: Railway vs Fly.io vs VPS</h3>
+                    <p>In-depth comparison of pricing, performance and ease of use across the most popular hosting platforms to help you choose the right one.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>9 min</span>
+                        <div class="dot"></div>
+                        <span>Nov 25, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="tutorial">
+                <img src="https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=600&auto=format&fit=crop" alt="Buttons">
+                <div class="card-body">
+                    <span class="post-tag tag-tutorial">Tutorial</span>
+                    <h3>Discord Interactive Components: Buttons, Select Menus & Modals</h3>
+                    <p>Learn how to create and respond to Button, SelectMenu and Modal components to build truly interactive bot experiences.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>11 min</span>
+                        <div class="dot"></div>
+                        <span>Nov 20, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="guide">
+                <img src="https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=600&auto=format&fit=crop" alt="Security">
+                <div class="card-body">
+                    <span class="post-tag tag-guide">Guide</span>
+                    <h3>Discord Bot Security Best Practices: Token Protection, Rate Limits & Anti-Abuse</h3>
+                    <p>Protect your bot token, handle API rate limits, and implement command cooldowns to prevent malicious abuse.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>8 min</span>
+                        <div class="dot"></div>
+                        <span>Nov 18, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+            <div class="article-card h4a-shine h4a-lift" data-category="tips">
+                <img src="https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=600&auto=format&fit=crop" alt="Debugging">
+                <div class="card-body">
+                    <span class="post-tag tag-tips">Tips</span>
+                    <h3>Discord Bot Debugging: Logging, Error Tracking & Top 10 Common Errors</h3>
+                    <p>Build a solid logging system, locate issues quickly, and resolve the 10 most common errors in Discord bot development.</p>
+                    <div class="post-meta" style="margin-bottom: 0.8rem;">
+                        <span><i class="fas fa-clock" style="margin-right:3px"></i>6 min</span>
+                        <div class="dot"></div>
+                        <span>Nov 15, 2024</span>
+                    </div>
+                    <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ===== TUTORIALS ===== -->
+<section id="tutorials">
+    <div class="container">
+        <div class="section-header h4a-reveal">
+            <div class="section-tag">Tutorial Series</div>
+            <h2>Complete Learning Paths</h2>
+            <p>Progressive difficulty tutorial series for systematic Discord bot development mastery</p>
+        </div>
+        <div class="tutorials-grid">
+
+            <div class="tutorial-card h4a-reveal-left">
+                <div class="tutorial-icon"><i class="fas fa-rocket"></i></div>
+                <div class="tutorial-info">
+                    <h3>Beginner Series: Launch Your First Bot in 30 Minutes</h3>
+                    <p>Covers environment setup, token retrieval, basic commands and full deployment — perfect for absolute beginners.</p>
+                    <div class="tutorial-footer">
+                        <span class="difficulty diff-easy">Beginner</span>
+                        <span><i class="fas fa-layer-group" style="margin-right:4px"></i>6 chapters</span>
+                        <span><i class="fas fa-clock" style="margin-right:4px"></i>~30 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tutorial-card h4a-reveal-right">
+                <div class="tutorial-icon"><i class="fas fa-terminal"></i></div>
+                <div class="tutorial-info">
+                    <h3>Command System: Build a Scalable Command Handler Framework</h3>
+                    <p>Design a modular command loader with categorization, permission checks, argument parsing and error handling.</p>
+                    <div class="tutorial-footer">
+                        <span class="difficulty diff-medium">Intermediate</span>
+                        <span><i class="fas fa-layer-group" style="margin-right:4px"></i>8 chapters</span>
+                        <span><i class="fas fa-clock" style="margin-right:4px"></i>~50 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tutorial-card h4a-reveal-left">
+                <div class="tutorial-icon"><i class="fas fa-database"></i></div>
+                <div class="tutorial-info">
+                    <h3>Data Persistence: MongoDB + Redis in Real-World Bot Applications</h3>
+                    <p>Use MongoDB for user data storage and Redis for caching and session management to support large-scale servers.</p>
+                    <div class="tutorial-footer">
+                        <span class="difficulty diff-medium">Intermediate</span>
+                        <span><i class="fas fa-layer-group" style="margin-right:4px"></i>10 chapters</span>
+                        <span><i class="fas fa-clock" style="margin-right:4px"></i>~70 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tutorial-card h4a-reveal-right">
+                <div class="tutorial-icon"><i class="fas fa-music"></i></div>
+                <div class="tutorial-info">
+                    <h3>Music Bot: Full Queue, Lyrics Display & Auto-Disconnect</h3>
+                    <p>Build a fully-featured music bot with @discordjs/voice including play, pause, skip, queue and lyrics display.</p>
+                    <div class="tutorial-footer">
+                        <span class="difficulty diff-hard">Advanced</span>
+                        <span><i class="fas fa-layer-group" style="margin-right:4px"></i>12 chapters</span>
+                        <span><i class="fas fa-clock" style="margin-right:4px"></i>~90 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tutorial-card h4a-reveal-left">
+                <div class="tutorial-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="tutorial-info">
+                    <h3>Moderation Bot: Auto Filter, Bans, Warnings & Audit Logs</h3>
+                    <p>Build a complete server moderation system with keyword filtering, strike accumulation, auto-ban and full audit logging.</p>
+                    <div class="tutorial-footer">
+                        <span class="difficulty diff-medium">Intermediate</span>
+                        <span><i class="fas fa-layer-group" style="margin-right:4px"></i>9 chapters</span>
+                        <span><i class="fas fa-clock" style="margin-right:4px"></i>~60 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tutorial-card h4a-reveal-right">
+                <div class="tutorial-icon"><i class="fas fa-brain"></i></div>
+                <div class="tutorial-info">
+                    <h3>AI Bot: Integrate OpenAI API for Smart Conversations & Content Generation</h3>
+                    <p>Embed ChatGPT / GPT-4 capabilities into your Discord bot for contextual chat, image generation and more.</p>
+                    <div class="tutorial-footer">
+                        <span class="difficulty diff-hard">Advanced</span>
+                        <span><i class="fas fa-layer-group" style="margin-right:4px"></i>11 chapters</span>
+                        <span><i class="fas fa-clock" style="margin-right:4px"></i>~80 min</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ===== TIPS ===== -->
+<section id="tips">
+    <div class="container">
+        <div class="section-header h4a-reveal">
+            <div class="section-tag">Dev Tips</div>
+            <h2>Quick Tips Reference</h2>
+            <p>Battle-tested development tips to make your bot more stable and efficient</p>
+        </div>
+        <div class="tips-grid h4a-stagger">
+
+            <div class="tip-card h4a-shine">
+                <div class="tip-number">TIP #01</div>
+                <h3>Always Store Tokens in Environment Variables</h3>
+                <p>Never hardcode your Bot Token in source code. Use the <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">dotenv</code> library to load from a <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">.env</code> file, and always add .env to .gitignore to prevent token leaks.</p>
+            </div>
+
+            <div class="tip-card h4a-shine">
+                <div class="tip-number">TIP #02</div>
+                <h3>Declare Only the Gateway Intents You Need</h3>
+                <p>Only request the Intents your bot actually uses (e.g. GuildMessages, GuildMembers). Avoid requesting Privileged Intents unnecessarily, which trigger Discord's verification requirements and waste bandwidth.</p>
+            </div>
+
+            <div class="tip-card h4a-shine">
+                <div class="tip-number">TIP #03</div>
+                <h3>Use deferReply() for Long-Running Operations</h3>
+                <p>For async operations taking more than 3 seconds (API calls, DB queries), call <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">interaction.deferReply()</code> first to prevent Discord from returning an "interaction failed" error.</p>
+            </div>
+
+            <div class="tip-card h4a-shine">
+                <div class="tip-number">TIP #04</div>
+                <h3>Implement Command Cooldowns to Prevent Abuse</h3>
+                <p>Use a <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">Map</code> to track each user's last invocation time. Check the cooldown before executing any command to stop users from spamming resource-intensive operations.</p>
+            </div>
+
+            <div class="tip-card h4a-shine">
+                <div class="tip-number">TIP #05</div>
+                <h3>Use Collection Instead of Plain Objects</h3>
+                <p>discord.js's <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">Collection</code> extends Map and provides <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">filter</code>, <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">find</code>, and <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">map</code> methods, making it perfect for managing command lists and cached data.</p>
+            </div>
+
+            <div class="tip-card h4a-shine">
+                <div class="tip-number">TIP #06</div>
+                <h3>Listen for unhandledRejection to Prevent Crashes</h3>
+                <p>Add a global error handler with <code style="background:#1A1D21;padding:2px 5px;border-radius:3px;font-family:monospace;font-size:0.8em;color:#57F287;">process.on('unhandledRejection')</code> in your main file to log errors and send alerts to your admin channel before uncaught exceptions crash your bot.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ===== TAGS ===== -->
+<section id="tags-section">
+    <div class="container">
+        <div class="section-header h4a-reveal" style="margin-bottom:2rem;">
+            <h2 style="font-size:1.4rem;">Popular Tags</h2>
+        </div>
+        <div class="tags-container h4a-reveal">
+            <span class="tag-pill"><i class="fab fa-js"></i> discord.js <span class="tag-count">18</span></span>
+            <span class="tag-pill"><i class="fab fa-python"></i> discord.py <span class="tag-count">14</span></span>
+            <span class="tag-pill"><i class="fas fa-terminal"></i> Slash Commands <span class="tag-count">12</span></span>
+            <span class="tag-pill"><i class="fas fa-database"></i> MongoDB <span class="tag-count">9</span></span>
+            <span class="tag-pill"><i class="fas fa-music"></i> Music Bot <span class="tag-count">7</span></span>
+            <span class="tag-pill"><i class="fas fa-shield-alt"></i> Permissions <span class="tag-count">8</span></span>
+            <span class="tag-pill"><i class="fas fa-brain"></i> AI Integration <span class="tag-count">6</span></span>
+            <span class="tag-pill"><i class="fas fa-cubes"></i> Embeds <span class="tag-count">10</span></span>
+            <span class="tag-pill"><i class="fas fa-mouse-pointer"></i> Components <span class="tag-count">8</span></span>
+            <span class="tag-pill"><i class="fas fa-server"></i> Deployment <span class="tag-count">7</span></span>
+            <span class="tag-pill"><i class="fas fa-bug"></i> Debugging <span class="tag-count">5</span></span>
+            <span class="tag-pill"><i class="fas fa-lock"></i> Security <span class="tag-count">6</span></span>
+        </div>
+    </div>
+</section>
+
+<!-- ===== NEWSLETTER ===== -->
+<section id="newsletter">
+    <div class="container">
+        <div class="newsletter-content h4a-reveal">
+            <div class="section-tag">Newsletter</div>
+            <h2>Weekly <span class="h4a-gradient-text">Discord Dev</span> Digest</h2>
+            <p>Subscribe to our weekly newsletter and get the latest tutorials, API updates, tool recommendations and community highlights delivered to your inbox.</p>
+            <div class="newsletter-form">
+                <input type="email" placeholder="Enter your email address" id="emailInput">
+                <button onclick="subscribe()" class="h4a-magnetic">
+                    <i class="fas fa-paper-plane" style="margin-right:6px"></i>Subscribe
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <a href="#" class="nav-logo" style="margin-bottom:1rem;display:inline-flex;">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.082.114 18.1.133 18.11a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                </div>
+                BotCraft Blog
+            </a>
+            <p>The go-to technical blog for Discord bot development — high-quality tutorials, code examples and best practices for every skill level.</p>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-discord"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Categories</h4>
+            <ul>
+                <li><a href="#">Beginner Guides</a></li>
+                <li><a href="#">Tutorial Series</a></li>
+                <li><a href="#">Code Examples</a></li>
+                <li><a href="#">Dev Tips</a></li>
+                <li><a href="#">Tool Reviews</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Topics</h4>
+            <ul>
+                <li><a href="#">discord.js</a></li>
+                <li><a href="#">discord.py</a></li>
+                <li><a href="#">Slash Commands</a></li>
+                <li><a href="#">Database Integration</a></li>
+                <li><a href="#">Bot Deployment</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>About</h4>
+            <ul>
+                <li><a href="#">About the Blog</a></li>
+                <li><a href="#">Write for Us</a></li>
+                <li><a href="#">Contact</a></li>
+                <li><a href="#">RSS Feed</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2024 BotCraft Blog. Your home for Discord bot development.</p>
+        <p>Built with <a href="https://host4.ai">host4.ai</a></p>
+    </div>
+</footer>
+
+<script>
+// Hamburger menu
+const hamburger=document.getElementById('hamburger');
+const navLinks=document.getElementById('navLinks');
+hamburger.addEventListener('click',()=>{hamburger.classList.toggle('active');navLinks.classList.toggle('active')});
+document.querySelectorAll('.nav-links a').forEach(l=>l.addEventListener('click',()=>{hamburger.classList.remove('active');navLinks.classList.remove('active')}));
+// Navbar scroll effect
+const navbar=document.querySelector('.navbar');
+window.addEventListener('scroll',()=>{navbar.style.background=window.scrollY>50?'rgba(10,12,16,0.95)':'rgba(10,12,16,0.85)'});
+// Filter posts
+function filterPosts(btn,category){document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.article-card').forEach(c=>{c.style.display=(category==='all'||c.dataset.category===category)?'block':'none'})}
+// Subscribe
+function subscribe(){const i=document.getElementById('emailInput'),e=i.value.trim();if(!e){alert('Please enter your email address.');return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){alert('Please enter a valid email address.');return}alert('Thanks for subscribing!');i.value=''}
+// Scroll reveal
+const ro={threshold:0.1,rootMargin:'0px 0px -50px 0px'};
+const rv=new IntersectionObserver(e=>{e.forEach(e=>{e.isIntersecting&&e.target.classList.add('visible')})},ro);
+document.querySelectorAll('.h4a-reveal,.h4a-reveal-left,.h4a-reveal-right,.h4a-blur-in').forEach(e=>rv.observe(e));
+// Stagger children
+const sv=new IntersectionObserver(e=>{e.forEach(e=>{if(e.isIntersecting){Array.from(e.target.children).forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*100))}})},ro);
+document.querySelectorAll('.h4a-stagger').forEach(e=>sv.observe(e));
+// Counter animation
+const cv=new IntersectionObserver(e=>{e.forEach(e=>{if(e.isIntersecting){const el=e.target,t=parseInt(el.textContent.replace(/[^0-9]/g,''),10);if(isNaN(t))return;let c=0,s=Math.ceil(t/40),ti=setInterval(()=>{c+=s;if(c>=t){c=t;clearInterval(ti)}el.textContent=c},40);cv.unobserve(el)}})},ro);
+document.querySelectorAll('.h4a-counter').forEach(e=>cv.observe(e));
+</script>
+</body>
+</html>
